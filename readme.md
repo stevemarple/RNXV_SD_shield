@@ -1,9 +1,18 @@
 # RN-XV and SD shield
 
-The RN-XV and SD shield is a designed for the Arduino. It is fully
-functional on a standard Arduino (Duemilanove, Uno etc). Optional
-features such as flow control and the GPIO features of the RN-XV
-require an Arduino Mega(2560) or Calunium
+The RN-XV and SD shield is designed for the Arduino. It provides an
+interface to the Roving Networks RN-XV Wifi module, which uses the
+pseudo-standard XBee footprint. XBee modules will probably work 
+although the circuitry is designed for the UART interface and GPIOs
+of the RN-XV. The shield also provides an interface to an SD card and
+the MicroMag3 magnetometer module by PNI. The shield can operate at
+either 3.3V or 5V; logic-gate level shifters ensure that the inputs
+*and* outputs of the RN-XV and SD card are only exposed to 3.3V signals.
+For 5V operation the MicroMag module is powered at 5V.
+
+The shield is fully functional on a standard Arduino (Duemilanove, 
+Uno etc). Optional features such as flow control and the GPIO features
+of the RN-XV require an Arduino Mega(2560) or Calunium
 (https://github.com/stevemarple/Calunium). For more information see
 http://blog.stevemarple.co.uk/2011/12/rn-xvsd-shield.html.
 
@@ -29,4 +38,9 @@ http://blog.stevemarple.co.uk/2011/12/rn-xvsd-shield.html.
 
 An Arduino library to take advantage of the various features is
 provided.
+
+## See also
+
+*   Calunium: https://github.com/stevemarple/Calunium
+*   MicroMag Arduino library: https://github.com/stevemarple/MicroMag
 
