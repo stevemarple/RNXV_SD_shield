@@ -23,7 +23,7 @@ http://blog.stevemarple.co.uk/2011/12/rn-xvsd-shield.html.
 *   A2: LM61 temperature sensor
 *   A3: MicroMag reset, LM61 power and heartbeat LED
 *   A6: SD select (if jumper JP3 fitted in RH position)
-*   A8 (Arduino Mega) or D14 (Calunium)     MicroMag DRDY
+*   A8 (Arduino Mega) or D14 (Calunium): MicroMag DRDY
 
 ## Arduino library
 A library to take advantage of the various features is currently under
