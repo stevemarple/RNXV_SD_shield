@@ -19,9 +19,9 @@ http://blog.stevemarple.co.uk/2011/12/rn-xvsd-shield.html.
 ## Pin mapping
 
 *   D4: SD select (if jumper JP3 fitted in LH position)
-*   D5: RN-XV GPIO5
-*   D8:  RN-XV GPIO6
-*   D9:  RN-XV GPIO8
+*   D5: RN-XV GPIO5 (if jumper JP5 fitted)
+*   D8:  RN-XV GPIO6  (if jumper JP8 fitted)
+*   D9:  RN-XV GPIO8 (if jumper JP6 fitted)
 *   D11: MOSI (if jumper JP7 fitted)
 *   D12: MISO (if jumper JP9 fitted)
 *   D13: SCK (if jumper JP10 fitted)
