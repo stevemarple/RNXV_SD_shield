@@ -25,7 +25,8 @@ http://blog.stevemarple.co.uk/2011/12/rn-xvsd-shield.html.
 *   A6: SD select (if jumper JP3 fitted in RH position)
 *   A8 (Arduino Mega) or D14 (Calunium): MicroMag DRDY
 
-## Arduino library
-A library to take advantage of the various features is currently under
-active development and will be added to this respository.
+## Arduino library 
+
+An Arduino library to take advantage of the various features is
+provided.
 
