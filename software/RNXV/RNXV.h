@@ -1,58 +1,172 @@
+#ifndef RNXV_H
+#define RNXV_H
 #include "Arduino.h"
+#include "IPAddress.h"
 
+#define RNXV_UNCONNECTED_PIN 0xff
+
+#ifdef CALUNIUM
+#define RNXV_DEFAULT_RTS 23
+#define RNXV_DEFAULT_CTS 22
+#define RNXV_DEFAULT_GPIO4 A1
+#define RNXV_DEFAULT_GPIO5 5
+#define RNXV_DEFAULT_GPIO6 8
+#define RNXV_DEFAULT_GPIO8 9
+#define RNXV_DEFAULT_CMD_PIN RNXV_UNCONNECTED_PIN
+
+#elif defined(__AVR_ATmega1280__) || defined( __AVR_ATmega2560__)
+#define RNXV_DEFAULT_RTS 15
+#define RNXV_DEFAULT_CTS 14
+#define RNXV_DEFAULT_GPIO4 A1
+#define RNXV_DEFAULT_GPIO5 5
+#define RNXV_DEFAULT_GPIO6 8
+#define RNXV_DEFAULT_GPIO8 9
+#define RNXV_DEFAULT_CMD_PIN RNXV_UNCONNECTED_PIN
+
+#else
+// Assume normal Arduino
+#define RNXV_DEFAULT_RTS RNXV_UNCONNECTED_PIN
+#define RNXV_DEFAULT_CTS RNXV_UNCONNECTED_PIN
+#define RNXV_DEFAULT_GPIO4 A1
+#define RNXV_DEFAULT_GPIO5 5
+#define RNXV_DEFAULT_GPIO6 8
+#define RNXV_DEFAULT_GPIO8 9
+#define RNXV_DEFAULT_CMD_PIN RNXV_UNCONNECTED_PIN
+#endif
 
 class RNXV {
- public: 
-  RNXV();
-  RNXV(Stream &stream);
+ public:
+  enum returnValues {
+    exitOk = 0,
+    errorCannotOpenFile,
+    errorRtsPinNotSet,
+    errorCtsPinNotSet,
+    errorGpio4PinNotSet,
+    errorGpio5PinNotSet,
+    errorGpio6PinNotSet,
+    errorGpio8PinNotSet,
+    errorCmdPinNotSet,
+    errorNotInCmdMode,
+    errorTimeout,
+    errorNotAssociated,
+    errorConnectionFailed,
+  };
+    
+  static const uint8_t unconnectedPin;
+  RNXV(Stream& uartStream);
 
-  template<class T> inline Print& operator<<(T arg) const {
-    uart.print(arg); return uart; 
-  }
-  
-  template<class T> inline void print(T arg) const {
-    uart.print(arg);
+  inline bool getDebug(void) const {
+    return debug;
   }
 
-  template<class T> inline void println(T arg) const {
-    uart.println(arg);
+  inline void setDebug(bool myDebug = true) {
+    debug = myDebug;
   }
 
   inline Stream& getUart(void) const {
     return uart;
   }
 
-  void commandMode(void) const;
+  inline Stream* getConsolePtr(void) const {
+    return console;
+  }
 
-  boolean configureFromFile(const char* filename) const;
-  boolean initialiseFromFile(const char* filename) const;
+  inline void setConsole(Stream &stream) {
+    console = &stream;
+  }
 
-  void setUart(Stream &stream);
-    
+  template<class T> inline Print& operator<<(T arg) const {
+    uart.print(arg);
+    return uart; 
+  }
+  
+  template<class T> inline void print(T arg) const {
+      uart.print(arg);
+  }
+
+  template<class T> inline void println(T arg) const {
+      uart.println(arg);
+  }
+
+  bool commandMode(void) const;
+  bool uartCommandMode(void) const;
+  bool gpioCommandMode(void) const;
+  
+  // RTS
+  void setRtsPin(uint8_t p = RNXV_DEFAULT_RTS);
+  bool rts(void) const;
+  inline uint8_t getRtsPin(void) const {
+    return rtsPin;
+  }
+  
+  // CTS
+  void setCtsPin(uint8_t p = RNXV_DEFAULT_CTS);
+  bool cts(bool a) const;
+  bool ctsWake(void) const;
+  inline uint8_t getCtsPin(void) const {
+    return ctsPin;
+  }
+  
   // GPIO4
-  void setAssociatedPin(int8_t p = A1);
-  boolean isAssociated(void) const;
+  void setGpio4Pin(uint8_t p = RNXV_DEFAULT_GPIO4);
+  bool isAssociated(void) const;
+  inline uint8_t getGpio4Pin(void) const {
+    return gpio4Pin;
+  }
 
   // GPIO5
-  void setOpenConnectionPin(int8_t p = 5);
-  boolean openConnection(void) const;
-  boolean closeConnection(void) const;
+  void setGpio5Pin(uint8_t p = RNXV_DEFAULT_GPIO5);
+  bool openConnection(void) const;
+  bool closeConnection(void) const;
+  inline uint8_t getGpio5Pin(void) const {
+    return gpio5Pin;
+  }
   
   // GPIO6
-  void setIsConnectedPin(int8_t p = 8);
-  boolean isConnected(void) const;
+  void setGpio6Pin(uint8_t p = RNXV_DEFAULT_GPIO6);
+  bool isConnected(void) const;
+  inline uint8_t getGpio6Pin(void) const {
+    return gpio6Pin;
+  }
 
-  // setGPIO8pin();
-  void setHardwareSleepPin(int8_t p = 9);
-  boolean hardwareSleep(void);
-  boolean hardwareWake(void);
+  // GPIO8
+  void setGpio8Pin(uint8_t p = RNXV_DEFAULT_GPIO8);
+  bool gpio8Sleep(void);
+  inline uint8_t getGpio8Pin(void) const {
+    return gpio8Pin;
+  }
+  
+  bool sendCommand(const char* cmd) const;
+  bool sendCommandsFromFile(const char* filename, char* buffer,
+			      int bufferLen) const;
+  bool connect(const char* hostname, uint16_t port) const;
+  bool connect(const IPAddress& ip, uint16_t port) const;
+  bool stop(void) const;
 
+  // For Ethernet compatibility
+  inline bool connected(void) const { return isConnected(); }
+
+  // Command-mode pin. This can be any available GPIO that isn't being
+  // used for something else
+  void setCmdPin(uint8_t p = RNXV_DEFAULT_CMD_PIN);
+  inline uint8_t getCmdPin(void) const {
+    return cmdPin;
+  }
+  
+  void showPinStatus(void) const;
+  
  private:
-  int8_t isAssociatedPin;
-  int8_t openConnectionPin;
-  int8_t isConnectedPin;
-  int8_t hardwareSleepPin;
-  // HardwareSerial &uart;
-  Stream &uart;
+  mutable uint8_t errno; // Error number
+  uint8_t rtsPin;
+  uint8_t ctsPin;
+  uint8_t gpio4Pin;
+  uint8_t gpio5Pin;
+  uint8_t gpio6Pin;
+  uint8_t gpio8Pin;
+  uint8_t cmdPin;
+  bool debug;
+  Stream& uart;
+  Stream* console; // use a pointer, might not have a console
 };
 
+#endif
