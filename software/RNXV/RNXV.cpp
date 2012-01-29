@@ -1,6 +1,7 @@
 #include "RNXV.h"
 
 // Use the readLine() function from IniFile
+#include "SD.h"
 #include "IniFile.h"
 
 const uint8_t RNXV::unconnectedPin = RNXV_UNCONNECTED_PIN;
@@ -115,8 +116,11 @@ void RNXV::setGpio4Pin(uint8_t pin)
 
 bool RNXV::isAssociated(void) const
 {
-  if (gpio4Pin == unconnectedPin)
-    return false;
+  if (gpio4Pin == unconnectedPin) {
+    errno = errorGpio4PinNotSet;
+    return true;
+  }
+  errno = exitOk;
   return digitalRead(gpio4Pin);
 }
 
@@ -158,7 +162,7 @@ bool RNXV::isConnected(void) const
 {
   if (gpio6Pin == unconnectedPin) {
     errno = errorGpio6PinNotSet;
-    return false;
+    return true;
   }
   errno = exitOk;
   return digitalRead(gpio6Pin);
@@ -230,7 +234,7 @@ bool RNXV::sendCommandsFromFile(const char* filename, char* buffer,
   return true;
 }
 
-bool RNXV::connect(const char* hostname, uint16_t port) const
+bool RNXV::connect(const char* hostname, uint16_t port, uint16_t timeout_ms) const
 {
   uart.print("open ");
   uart.print(hostname);
@@ -247,12 +251,21 @@ bool RNXV::connect(const char* hostname, uint16_t port) const
       console->print(char(uart.read()));
     console->println();
   }
+  unsigned long t = millis();
+  while (!isConnected())
+    if (millis() - t > timeout_ms) {
+      errno = errorTimeout;
+      return false;
+    }
+
   errno = exitOk;
   return true;  
 }
 
-bool RNXV::connect(const IPAddress& ip, uint16_t port) const
+bool RNXV::connect(const IPAddress& ip, uint16_t port, uint16_t timeout_ms) const
 {
+  if (!isAssociated())
+    return false; // errno already set
   uart.print("open ");
   uart.print(ip);
   uart.print(' ');
@@ -268,6 +281,13 @@ bool RNXV::connect(const IPAddress& ip, uint16_t port) const
       console->print(char(uart.read()));
     console->println();
   }
+  unsigned long t = millis();
+  while (!isConnected())
+    if (millis() - t > timeout_ms) {
+      errno = errorTimeout;
+      return false;
+    }
+  
   errno = exitOk;
   return true;  
 }

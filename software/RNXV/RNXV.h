@@ -34,6 +34,10 @@
 #define RNXV_DEFAULT_CMD_PIN RNXV_UNCONNECTED_PIN
 #endif
 
+#ifndef RNXV_TIMEOUT_MS
+#define RNXV_TIMEOUT_MS 4000
+#endif
+
 class RNXV {
  public:
   enum returnValues {
@@ -55,6 +59,14 @@ class RNXV {
   static const uint8_t unconnectedPin;
   RNXV(Stream& uartStream);
 
+  inline returnValues getErrno(void) const {
+    return errno;
+  }
+
+  inline void clearErrno(void) const {
+    errno = exitOk;
+  }
+  
   inline bool getDebug(void) const {
     return debug;
   }
@@ -88,6 +100,10 @@ class RNXV {
       uart.println(arg);
   }
 
+  inline void flush(void) const {
+    uart.flush();
+  }
+  
   bool commandMode(void) const;
   bool uartCommandMode(void) const;
   bool gpioCommandMode(void) const;
@@ -139,8 +155,10 @@ class RNXV {
   bool sendCommand(const char* cmd) const;
   bool sendCommandsFromFile(const char* filename, char* buffer,
 			      int bufferLen) const;
-  bool connect(const char* hostname, uint16_t port) const;
-  bool connect(const IPAddress& ip, uint16_t port) const;
+  bool connect(const char* hostname, uint16_t port,
+	       uint16_t timeout_ms = RNXV_TIMEOUT_MS) const;
+  bool connect(const IPAddress& ip, uint16_t port,
+	       uint16_t timeout_ms = RNXV_TIMEOUT_MS) const;
   bool stop(void) const;
 
   // For Ethernet compatibility
@@ -156,7 +174,7 @@ class RNXV {
   void showPinStatus(void) const;
   
  private:
-  mutable uint8_t errno; // Error number
+  mutable returnValues errno; // Error number
   uint8_t rtsPin;
   uint8_t ctsPin;
   uint8_t gpio4Pin;
