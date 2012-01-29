@@ -206,8 +206,7 @@ bool RNXV::sendCommand(const char* cmd) const
   uart.print(cmd);
   uart.print('\r');
   if (console && debug) {
-    console->print(cmd);
-    console->println();
+    console->println(cmd);
     delay(50);
     while (uart.available())
       console->print(char(uart.read()));
@@ -242,14 +241,14 @@ bool RNXV::connect(const char* hostname, uint16_t port, uint16_t timeout_ms) con
   uart.print(port, DEC);
   uart.print('\r');
   if (console && debug) {
-    uart.print("open ");
-    uart.print(hostname);
-    uart.print(' ');
-    uart.println(port, DEC);
-    delay(50);
-    while (uart.available())
-      console->print(char(uart.read()));
-    console->println();
+    console->print("open ");
+    console->print(hostname);
+    console->print(' ');
+    console->println(port, DEC);
+    // delay(50);
+    // while (uart.available())
+    //   console->print(char(uart.read()));
+    // console->println();
   }
   unsigned long t = millis();
   while (!isConnected())
