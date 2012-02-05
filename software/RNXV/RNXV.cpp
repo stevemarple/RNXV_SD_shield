@@ -17,10 +17,16 @@ RNXV::RNXV(Stream &uartStream) : uart(uartStream)
 
 bool RNXV::commandMode(void) const
 {
+  return uartCommandMode();
+  
   if (cmdPin == unconnectedPin)
     return uartCommandMode();
-  else
-    return gpioCommandMode();
+  else {
+    if (gpioCommandMode())
+      return true;
+    else
+    return uartCommandMode();
+  }
 }
 
 bool RNXV::uartCommandMode(void) const
@@ -46,12 +52,24 @@ bool RNXV::gpioCommandMode() const
   if (console && debug)
     console->println("cmd_GPIO");
 
+  uint8_t ctsPinOrigState;
+  if (ctsPin != unconnectedPin) {
+    ctsPinOrigState = digitalRead(ctsPin);
+    digitalWrite(ctsPin, HIGH); // Don't allow new data to be sent
+  }
   digitalWrite(cmdPin, HIGH);
+  uart.flush();
+  if (ctsPin != unconnectedPin)
+    digitalWrite(ctsPin, LOW); // Allow sending of data
+  
   uart.print('\r');
   // Read in '?', with a timeout
   char c;
   int i = uart.readBytes(&c, 1);
   digitalWrite(cmdPin, LOW);
+  if (ctsPin != unconnectedPin)
+    digitalWrite(ctsPin, ctsPinOrigState);
+
   if (i == 0) {
     errno = errorTimeout; 
     return false;
@@ -188,7 +206,7 @@ void RNXV::setCmdPin(uint8_t pin)
 }
 
 // Sleep using GPIO8 requires a rising edge, return to low level afterwards
-bool RNXV::gpio8Sleep(void)
+bool RNXV::gpio8Sleep(void) const
 {
   if (gpio8Pin == unconnectedPin) {
     errno = errorGpio8PinNotSet;
@@ -332,3 +350,107 @@ void RNXV::showPinStatus(void) const
   else
     console->println(isConnected());
 }
+
+
+void RNXV::consoleDebugger(void) const
+{
+  if (console == NULL)
+    return;
+
+  const int consoleBufferLen = 80;
+  char consoleBuffer[consoleBufferLen];
+  const int uartBufferLen = 80;
+  char uartBuffer[uartBufferLen];
+
+  // Read from console
+  if (console->available()) {
+    int len = console->readBytesUntil('\n', consoleBuffer, consoleBufferLen-1);
+    if (len) {
+      consoleBuffer[len] = '\0';
+      trimInput(&consoleBuffer[1]);
+      if (consoleBuffer[0] == '$') {
+	// Handle RNXV commands. These are sent with '\r' terminator
+	if (consoleBuffer[1] == '$' && consoleBuffer[2] == '$') {
+	  console->flush();
+	  commandMode();
+	}
+	else { 
+	  // Send some other command
+	  sendCommand(&consoleBuffer[1]); // Omit leading $
+	}
+      }
+      // Handle commands to read/modify pin status
+      else if (consoleBuffer[0] == '!') {
+	console->println(&consoleBuffer[0]); // Echo command
+	console->print("!=> ");
+	if (consoleBuffer[1] == '\0') {
+	  showPinStatus();
+	}
+	else if (strcmp(consoleBuffer, "!gpio8Sleep") == 0) {
+	  gpio8Sleep();
+	}
+	else if (strcmp(consoleBuffer, "!ctsWake") == 0) {
+	  ctsWake();
+	}
+	else if (strcmp(consoleBuffer, "!cts 0") == 0) {
+	  cts(0);
+	}
+	else if (strcmp(consoleBuffer, "!cts 1") == 0) {
+	  cts(1);
+	}
+	else if (strcmp(consoleBuffer, "!openConnection") == 0) {
+	  openConnection();
+	}
+	else if (strcmp(consoleBuffer, "!closeConnection") == 0) {
+	  closeConnection();
+	}
+	else if (strcmp(consoleBuffer, "!commandMode") == 0) {
+	  commandMode();
+	}
+	else if (strcmp(consoleBuffer, "!uartCommandMode") == 0) {
+	  int8_t r = uartCommandMode();
+	  console->print("!uartCommandMode -> ");
+	  console->println(r, DEC);
+	}
+	else if (strcmp(consoleBuffer, "!gpioCommandMode") == 0) {
+	  int8_t r = gpioCommandMode();
+	  console->print("!gpioCommandMode -> ");
+	  console->println(r, DEC);
+	}
+	else if (strcmp(consoleBuffer, "!isConnected") == 0) {
+	  int8_t r = isConnected();
+	  console->print("!isConnected -> ");
+	  console->println(r, DEC);
+	}
+	else if (strcmp(consoleBuffer, "!stop") == 0) {
+	  int8_t r = stop();
+	  console->print("!stop -> ");
+	  console->println(r, DEC);
+	}
+	else {
+	  console->println("Unknown command");
+	}
+      }
+      else
+	uart.write((uint8_t*)consoleBuffer, len);
+    }
+  }
+
+  // Read from uart
+  if (uart.available()) {
+    int len = uart.readBytes(uartBuffer, uartBufferLen-1);
+    uartBuffer[len] = '\0';
+    console->write((uint8_t*)uartBuffer, len);
+  }
+  return;
+}
+
+void RNXV::trimInput(char* str)
+{
+  for (int i = strlen(str) - 1; i >= 0; --i)
+    if (isspace(str[i]))
+      str[i] = '\0';
+    else
+      break;
+}
+

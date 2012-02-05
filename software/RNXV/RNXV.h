@@ -34,9 +34,7 @@
 #define RNXV_DEFAULT_CMD_PIN RNXV_UNCONNECTED_PIN
 #endif
 
-#ifndef RNXV_TIMEOUT_MS
 #define RNXV_TIMEOUT_MS 4000
-#endif
 
 class RNXV {
  public:
@@ -147,7 +145,7 @@ class RNXV {
 
   // GPIO8
   void setGpio8Pin(uint8_t p = RNXV_DEFAULT_GPIO8);
-  bool gpio8Sleep(void);
+  bool gpio8Sleep(void) const;
   inline uint8_t getGpio8Pin(void) const {
     return gpio8Pin;
   }
@@ -172,6 +170,7 @@ class RNXV {
   }
   
   void showPinStatus(void) const;
+  void consoleDebugger() const;
   
  private:
   mutable returnValues errno; // Error number
@@ -185,6 +184,9 @@ class RNXV {
   bool debug;
   Stream& uart;
   Stream* console; // use a pointer, might not have a console
+
+  // Remove trailing CR, NL and other whitespace
+  static void trimInput(char* str);
 };
 
 #endif
