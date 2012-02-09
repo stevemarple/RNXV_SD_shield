@@ -34,6 +34,24 @@ http://blog.stevemarple.co.uk/2011/12/rn-xvsd-shield.html.
 *   A6: SD select (if jumper JP3 fitted in RH position)
 *   A8 (Arduino Mega) or D14 (Calunium): MicroMag DRDY
 
+## Jumper settings
+
+*   JP1: Shield power supply; voltage regulator or 3.3V supply
+*   JP2: Voltage regulator input; from +5V or Vin
+*   JP3: SD chip select; D4 or A6
+*   JP4: CTS flow control; D14 (Arduino Mega) or D22 (Calunium)
+*   JP5: GPIO5; D5
+*   JP6: GPIO8; D9
+*   JP7: MOSI; link MOSI to D11
+*   JP8: GPIO6; D8
+*   JP9: MISO; link MISO to D12
+*   JP10: SCK; link SCK to D13
+*   JP11: GPIO4; A1
+*   JP12: RTS flow control; D15 (Arduino Mega) or D23 (Calunium)
+*   X2: TX/RX selection, any of D0,D1,D2,D3. Also D19/D18 (RX1/TX1) for
+        Arduino Mega or D2/D3 (RX1/TX1) for Calunium
+
+
 ## Arduino library 
 
 An Arduino library to take advantage of the various features is
