@@ -11,7 +11,7 @@ RNXV::RNXV(Stream &uartStream) : uart(uartStream)
   // Mark input/output pins unconnected
   gpio4Pin = gpio5Pin = gpio6Pin = gpio8Pin = cmdPin = unconnectedPin;
   debug = false;
-  
+  errno = exitOk;
   console = NULL; // no console by default
 }
 
@@ -239,16 +239,31 @@ bool RNXV::sendCommandsFromFile(const char* filename, char* buffer,
 {
   File file = SD.open(filename);
   if (!file) {
+    if (console && debug) {
+      console->print("sendCommandsFromFile(): cannot open ");
+      console->println(filename);
+    }
     errno = errorCannotOpenFile;
     return false;
   }
+
+  bool ret = true;
   uint32_t pos = 0;
-  while (IniFile::readLine(file, buffer, bufferLen, pos) == 0) {
+  while (1) {
+    int8_t r = IniFile::readLine(file, buffer, bufferLen, pos);
+    if (r < 0) {
+      ret = false;
+      break;
+    }
+    uart.flush();
     sendCommand(buffer);
+    if (r)
+      break;
   }
   file.close();
+  uart.flush();
   errno = exitOk;
-  return true;
+  return ret;
 }
 
 bool RNXV::connect(const char* hostname, uint16_t port, uint16_t timeout_ms) const
@@ -352,7 +367,7 @@ void RNXV::showPinStatus(void) const
 }
 
 
-void RNXV::consoleDebugger(void) const
+void RNXV::consoleDebugger(void)
 {
   if (console == NULL)
     return;
@@ -421,6 +436,26 @@ void RNXV::consoleDebugger(void) const
 	  int8_t r = isConnected();
 	  console->print("!isConnected -> ");
 	  console->println(r, DEC);
+	}
+	else if (strcmp(consoleBuffer, "!setDebug 0") == 0) {
+	  setDebug(0);
+	}
+	else if (strcmp(consoleBuffer, "!setDebug 1") == 0) {
+	  setDebug(1);
+	}
+	else if (strncmp(consoleBuffer, "!sendCommandsFromFile ", 22) == 0) {
+	  const int bufferLen = 100;
+	  char buffer[bufferLen];
+	  int8_t r = sendCommandsFromFile(&consoleBuffer[22],
+					  buffer, bufferLen); 
+	  console->print("!sendCommandsFromFile -> ");
+	  console->print(r, DEC);
+	  if (r)
+	    console->println();
+	  else {
+	    console->print(" errno=");
+	    console->println(errno);
+	  }
 	}
 	else if (strcmp(consoleBuffer, "!stop") == 0) {
 	  int8_t r = stop();

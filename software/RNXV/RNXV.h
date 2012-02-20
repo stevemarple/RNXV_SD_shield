@@ -170,7 +170,7 @@ class RNXV {
   }
   
   void showPinStatus(void) const;
-  void consoleDebugger() const;
+  void consoleDebugger();
   
  private:
   mutable returnValues errno; // Error number
